@@ -1,0 +1,292 @@
+@import "tailwindcss";
+@import "highlight.js/styles/github-dark.css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --app-bg: oklch(97.5% 0.006 80);
+  --sidebar-bg: oklch(95% 0.008 75);
+  --line: oklch(89% 0.007 75);
+  --text-primary: oklch(22% 0.012 60);
+  --text-secondary: oklch(48% 0.01 60);
+  --text-tertiary: oklch(60% 0.01 60);
+  --accent: oklch(54% 0.11 250);
+  --accent-soft: oklch(92% 0.03 250);
+  --accent-text: oklch(99% 0.01 250);
+  --bubble-user-bg: oklch(93% 0.01 75);
+  --bubble-user-text: var(--text-primary);
+  --bubble-user-weight: 400;
+  --code-bg: oklch(20% 0.01 60);
+  --code-header-bg: oklch(26% 0.01 60);
+  --code-text: oklch(92% 0.01 80);
+  --input-bg: oklch(99% 0.004 80);
+  --chip-bg: oklch(93% 0.01 75);
+  --msg-font-size: 15px;
+}
+
+[data-font-size="sm"] {
+  --msg-font-size: 13.5px;
+}
+[data-font-size="lg"] {
+  --msg-font-size: 16.5px;
+}
+
+.dark {
+  --app-bg: oklch(14% 0.014 110);
+  --sidebar-bg: oklch(11% 0.014 110);
+  --line: oklch(27% 0.02 110);
+  --text-primary: oklch(94% 0.01 110);
+  --text-secondary: oklch(68% 0.02 110);
+  --text-tertiary: oklch(50% 0.02 110);
+  --accent: oklch(84% 0.18 128);
+  --accent-soft: oklch(30% 0.06 128);
+  --accent-text: oklch(15% 0.03 128);
+  --bubble-user-bg: var(--accent);
+  --bubble-user-text: var(--accent-text);
+  --bubble-user-weight: 500;
+  --code-bg: oklch(10% 0.012 110);
+  --code-header-bg: oklch(15% 0.012 110);
+  --code-text: oklch(90% 0.02 128);
+  --input-bg: oklch(20% 0.016 110);
+  --chip-bg: oklch(23% 0.018 110);
+}
+
+@theme inline {
+  --color-app: var(--app-bg);
+  --color-sidebar: var(--sidebar-bg);
+  --color-line: var(--line);
+  --color-primary: var(--text-primary);
+  --color-secondary: var(--text-secondary);
+  --color-tertiary: var(--text-tertiary);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-text: var(--accent-text);
+  --color-bubble: var(--bubble-user-bg);
+  --color-bubble-text: var(--bubble-user-text);
+  --color-code: var(--code-bg);
+  --color-code-header: var(--code-header-bg);
+  --color-code-text: var(--code-text);
+  --color-input: var(--input-bg);
+  --color-chip: var(--chip-bg);
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-source-serif);
+  --font-mono: var(--font-plex-mono);
+}
+
+body {
+  background: var(--app-bg);
+  color: var(--text-primary);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.bubble-user {
+  background: var(--bubble-user-bg);
+  color: var(--bubble-user-text);
+  font-weight: var(--bubble-user-weight);
+}
+
+.msg-text {
+  font-size: var(--msg-font-size);
+}
+
+.assistant-prose {
+  font-family: var(--font-serif), Georgia, serif;
+}
+
+.markdown-body {
+  font-size: var(--msg-font-size);
+}
+
+.markdown-body > *:first-child {
+  margin-top: 0;
+}
+.markdown-body > *:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body p {
+  margin: 0.85em 0;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  margin: 0.85em 0;
+  padding-left: 1.6em;
+}
+.markdown-body ul {
+  list-style: disc;
+}
+.markdown-body ol {
+  list-style: decimal;
+}
+.markdown-body ul ul,
+.markdown-body ol ol,
+.markdown-body ul ol,
+.markdown-body ol ul {
+  margin: 0.35em 0;
+}
+.markdown-body li {
+  margin: 0.35em 0;
+  padding-left: 0.2em;
+}
+.markdown-body li::marker {
+  color: var(--text-tertiary);
+}
+.markdown-body li > p {
+  margin: 0.4em 0;
+}
+
+.markdown-body li.task-list-item {
+  list-style: none;
+  margin-left: -1.6em;
+  padding-left: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.55em;
+}
+.markdown-body li.task-list-item input[type="checkbox"] {
+  accent-color: var(--accent);
+  margin-top: 0.2em;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text-primary);
+}
+.markdown-body h1 {
+  font-size: 1.5em;
+  margin: 1.3em 0 0.6em;
+  padding-bottom: 0.4em;
+  border-bottom: 1px solid var(--line);
+}
+.markdown-body h2 {
+  font-size: 1.28em;
+  margin: 1.2em 0 0.55em;
+}
+.markdown-body h3 {
+  font-size: 1.12em;
+  margin: 1.1em 0 0.5em;
+}
+.markdown-body h4 {
+  font-size: 1em;
+  margin: 1em 0 0.4em;
+}
+.markdown-body > h1:first-child,
+.markdown-body > h2:first-child,
+.markdown-body > h3:first-child,
+.markdown-body > h4:first-child {
+  margin-top: 0;
+}
+
+.markdown-body strong {
+  font-weight: 650;
+}
+
+.markdown-body blockquote {
+  border-left: 3px solid var(--accent-soft);
+  color: var(--text-secondary);
+  padding: 0.15em 0 0.15em 1em;
+  margin: 1em 0;
+}
+.markdown-body blockquote p {
+  margin: 0.4em 0;
+}
+
+.markdown-body a {
+  word-break: break-word;
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, var(--accent) 40%, transparent);
+  text-underline-offset: 2px;
+  transition: text-decoration-color 0.15s;
+}
+.markdown-body a:hover {
+  text-decoration-color: var(--accent);
+}
+
+.markdown-body .table-scroll {
+  margin: 1em 0;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.markdown-body table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.92em;
+  font-family: var(--font-sans), sans-serif;
+}
+.markdown-body th {
+  background: var(--chip-bg);
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+.markdown-body th,
+.markdown-body td {
+  padding: 0.55em 0.9em;
+  border-bottom: 1px solid var(--line);
+}
+.markdown-body th:not(:last-child),
+.markdown-body td:not(:last-child) {
+  border-right: 1px solid var(--line);
+}
+.markdown-body tr:last-child td {
+  border-bottom: none;
+}
+.markdown-body tbody tr:hover {
+  background: color-mix(in oklab, var(--chip-bg) 55%, transparent);
+}
+
+.markdown-body code:not(pre code) {
+  background: var(--chip-bg);
+  border-radius: 4px;
+  padding: 0.2em 0.45em;
+  font-size: 0.87em;
+  font-family: var(--font-mono), monospace;
+}
+.markdown-body pre code {
+  font-family: var(--font-mono), monospace;
+  background: transparent;
+}
+
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 1.5em 0;
+}
+
+.markdown-body .footnotes {
+  margin-top: 1.5em;
+  padding-top: 0.8em;
+  border-top: 1px solid var(--line);
+  font-size: 0.85em;
+  color: var(--text-secondary);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 8px;
+}
+
+@keyframes bounce-dot {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  40% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
