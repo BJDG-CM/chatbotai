@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import type { ChatMessagePayload } from "@/lib/openrouter";
+import { isAuthenticated, unauthorizedResponse } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -21,6 +22,8 @@ function jsonError(message: string, status: number) {
 }
 
 export async function POST(req: NextRequest) {
+  if (!(await isAuthenticated())) return unauthorizedResponse();
+
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
     return jsonError(
@@ -46,8 +49,8 @@ export async function POST(req: NextRequest) {
     return jsonError("model과 messages가 필요합니다.", 400);
   }
 
-  const siteUrl = process.env.SITE_URL || "http://localhost:3000";
-  const siteName = process.env.SITE_NAME || "Local Chat";
+  const siteUrl = process.env.SITE_URL || "https://chatbot.yejunlee.com";
+  const siteName = process.env.SITE_NAME || "Yejun's Private Chat";
 
   let upstream: Response;
   try {

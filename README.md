@@ -1,60 +1,105 @@
-# ChatbotAI
+# Yejun's Private Chat
 
-OpenRouter API를 사용하는 로컬 웹 채팅 애플리케이션입니다. Next.js App Router와 TypeScript로 구성되어 있으며, 모델 선택·스트리밍 응답·이미지 입력·대화 기록 백업을 지원합니다.
+OpenRouter API를 사용하는 개인용 Next.js 채팅 앱입니다. `chatbot.yejunlee.com`에서 실행되며, 서버 환경변수로 지정한 한 명만 로그인할 수 있습니다.
 
-## 주요 기능
+## 보안 구조
 
-- SSE 기반 스트리밍 채팅과 응답 중단·재생성
-- 유료·무료 모델 선택 및 자동 라우팅
-- 마크다운, 코드 하이라이팅, 이미지 입력과 이미지 응답 표시
-- 라이트·다크 테마
-- 모델 목록, 시스템 프롬프트, temperature 설정
-- 브라우저 localStorage와 로컬 `data/` 폴더에 대화 기록 저장
+- 사용자명과 비밀번호는 서버 환경변수에서만 읽으며 브라우저 번들·Git 저장소에 포함되지 않습니다.
+- 로그인에 성공하면 7일 동안 유효한 `HttpOnly`, `SameSite=Strict` 서명 쿠키를 발급합니다.
+- 채팅 화면과 설정 화면뿐 아니라 `/api/chat`, `/api/history`도 서버에서 각각 인증을 검사합니다.
+- 세션 쿠키는 `chatbot.yejunlee.com` 호스트에서만 전송됩니다.
+- 전체 앱에 `noindex`, `nofollow`, `noarchive` 헤더와 메타데이터를 적용합니다.
+- OpenRouter API 키는 서버에만 존재합니다.
 
-## 요구 사항
+## 로컬 실행
 
-- Node.js 20 이상
-- OpenRouter API 키
-
-## 실행
-
-Windows에서는 `start.bat`을 실행하면 의존성을 설치하고 개발 서버를 시작합니다.
-
-직접 실행하려면 프로젝트 루트에 `.env.local`을 만들고 다음 값을 설정합니다.
-
-```dotenv
-OPENROUTER_API_KEY=your_key_here
-SITE_URL=http://localhost:3000
-SITE_NAME=Local Chat
-```
-
-그다음 아래 명령을 실행합니다.
+요구 사항은 Node.js 22 이상과 OpenRouter API 키입니다.
 
 ```bash
+cp .env.example .env.local
 npm install
 npm run dev
 ```
 
-기본 주소는 `http://localhost:3000`입니다.
+`.env.local`에서 다음 값을 반드시 변경합니다.
 
-## 검증 및 프로덕션 실행
+```dotenv
+OPENROUTER_API_KEY=
+SITE_URL=http://localhost:3000
+SITE_NAME=Yejun's Private Chat
+CHATBOT_USERNAME=yejun
+CHATBOT_PASSWORD=
+CHATBOT_SESSION_SECRET=
+ENABLE_FILE_HISTORY_BACKUP=true
+```
+
+세션 비밀값은 아래처럼 생성할 수 있습니다.
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
+```
+
+로컬 주소는 `http://localhost:3000`입니다.
+
+## 검증
 
 ```bash
 npm run lint
 npm run build
-npm start
+npm run cloudflare:build
 ```
 
-## 데이터와 비밀정보
+## `chatbot.yejunlee.com` 배포
 
-- `.env`, `.env.local`을 포함한 모든 `.env*` 파일은 Git에서 제외됩니다.
-- `data/`에는 개인 대화 기록이 저장되므로 Git에서 제외됩니다.
-- API 키는 서버에서만 읽으며 브라우저 코드에 포함하지 않습니다.
+앱 전체를 Cloudflare Workers에서 직접 실행합니다. 별도 원본 서버는 사용하지 않습니다. `chatbot.yejunlee.com`은 Worker의 Custom Domain이며, 기존 `yejunlee.com` 홈페이지와 DNS 레코드는 변경하지 않습니다.
 
-## 구조
+1. Cloudflare에 로그인합니다.
 
-- `src/app/api/chat/`: OpenRouter 스트리밍 API 프록시
-- `src/app/api/history/`: 로컬 대화 기록 동기화
-- `src/components/`: 채팅·설정 UI
-- `src/lib/`: 모델 목록, 상태 저장소, 자동 라우팅
-- `start.bat`: Windows 실행 도우미
+```bash
+npx wrangler login
+```
+
+2. 로그인 사용자명, 비밀번호, OpenRouter 키와 세션 비밀값을 Cloudflare 암호화 Secret으로 등록합니다. 각 명령은 값을 터미널에서 직접 입력받으며 Git 저장소에 기록하지 않습니다.
+
+```bash
+npx wrangler secret put OPENROUTER_API_KEY
+npx wrangler secret put CHATBOT_USERNAME
+npx wrangler secret put CHATBOT_PASSWORD
+npx wrangler secret put CHATBOT_SESSION_SECRET
+```
+
+`CHATBOT_SESSION_SECRET`은 32바이트 이상이어야 합니다. 생성 예시는 다음과 같습니다.
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
+```
+
+3. Cloudflare Workers용 빌드를 검증하고 배포합니다.
+
+```bash
+npm ci
+npm run cloudflare:typegen
+npm run cloudflare:build
+npm run cloudflare:deploy
+```
+
+4. 배포가 완료되면 Cloudflare가 `chatbot.yejunlee.com` DNS 레코드와 TLS 인증서를 자동으로 생성합니다. 해당 호스트에 기존 CNAME이 있으면 먼저 삭제해야 합니다.
+
+5. `https://chatbot.yejunlee.com/login`에서 지정한 계정으로 로그인되는지 확인합니다.
+
+## 데이터 저장
+
+- Cloudflare 배포에서는 대화와 설정을 현재 브라우저의 `localStorage`에만 저장합니다.
+- 로컬 개발에서 `ENABLE_FILE_HISTORY_BACKUP=true`이면 `data/history.json`과 `data/history.md`에도 백업합니다.
+- `data/`, `.env*`, Cloudflare 로컬 상태는 Git에서 제외됩니다.
+
+## 주요 구조
+
+- `src/app/(private)/`: 로그인 후에만 볼 수 있는 채팅·설정 화면
+- `src/app/login/`: 개인 로그인 화면
+- `src/app/api/auth/`: 로그인·로그아웃 API
+- `src/app/api/chat/`: 인증된 OpenRouter 스트리밍 프록시
+- `src/app/api/history/`: 인증된 대화 기록 동기화
+- `src/lib/session.ts`: 자격 확인과 서명 세션 처리
+- `vite.config.ts`: Next.js 앱을 Workers용으로 변환하는 vinext 설정
+- `wrangler.jsonc`: `chatbot.yejunlee.com` Custom Domain, Secret 요구 사항, Workers 런타임 설정

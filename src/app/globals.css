@@ -68,9 +68,9 @@
   --color-code-text: var(--code-text);
   --color-input: var(--input-bg);
   --color-chip: var(--chip-bg);
-  --font-sans: var(--font-inter);
-  --font-serif: var(--font-source-serif);
-  --font-mono: var(--font-plex-mono);
+  --font-sans: Inter, Pretendard, "Noto Sans KR", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Source Serif 4", "Noto Serif KR", Georgia, serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
 }
 
 body {

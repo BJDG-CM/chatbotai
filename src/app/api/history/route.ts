@@ -2,12 +2,16 @@ import { NextRequest } from "next/server";
 import { promises as fs } from "fs";
 import path from "path";
 import type { Conversation } from "@/lib/types";
+import { isAuthenticated, unauthorizedResponse } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const JSON_PATH = path.join(DATA_DIR, "history.json");
 const MD_PATH = path.join(DATA_DIR, "history.md");
+const FILE_BACKUP_ENABLED =
+  String(process.env.ENABLE_FILE_HISTORY_BACKUP) === "true" ||
+  String(process.env.NODE_ENV) !== "production";
 
 interface HistoryPayload {
   conversations: Conversation[];
@@ -63,18 +67,31 @@ function renderMarkdown(payload: HistoryPayload): string {
 }
 
 export async function GET() {
+  if (!(await isAuthenticated())) return unauthorizedResponse();
+  if (!FILE_BACKUP_ENABLED) {
+    return Response.json(
+      { conversations: [], activeId: null },
+      { headers: { "Cache-Control": "no-store" } }
+    );
+  }
+
   try {
     const raw = await fs.readFile(JSON_PATH, "utf-8");
-    return new Response(raw, { status: 200, headers: { "Content-Type": "application/json" } });
+    return new Response(raw, {
+      status: 200,
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+    });
   } catch {
     return new Response(JSON.stringify({ conversations: [], activeId: null }), {
       status: 200,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
     });
   }
 }
 
 export async function POST(req: NextRequest) {
+  if (!(await isAuthenticated())) return unauthorizedResponse();
+
   let body: HistoryPayload;
   try {
     body = await req.json();
@@ -84,6 +101,13 @@ export async function POST(req: NextRequest) {
 
   if (!Array.isArray(body.conversations)) {
     return jsonError("conversations가 필요합니다.", 400);
+  }
+
+  if (!FILE_BACKUP_ENABLED) {
+    return Response.json(
+      { ok: true, persisted: false },
+      { headers: { "Cache-Control": "no-store" } }
+    );
   }
 
   try {
@@ -98,6 +122,6 @@ export async function POST(req: NextRequest) {
 
   return new Response(JSON.stringify({ ok: true }), {
     status: 200,
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
   });
 }

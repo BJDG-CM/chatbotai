@@ -32,9 +32,7 @@ yarn-error.log*
 
 # environment files and local credentials
 .env*
-
-# vercel
-.vercel
+!.env.example
 
 # local chat history backup (personal data, not source)
 /data
@@ -42,3 +40,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Cloudflare Worker local state and build output
+/dist/
+.vinext/
+.wrangler/
+.npm-cache/

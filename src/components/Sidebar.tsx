@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Moon, Plus, Settings, Sun, Trash2 } from "lucide-react";
+import { LogOut, Moon, Plus, Settings, Sun, Trash2 } from "lucide-react";
 import { useChatStore } from "@/lib/store";
 import { useSettingsStore } from "@/lib/settingsStore";
 import { cn } from "@/lib/utils";
+import { appPath } from "@/lib/paths";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -20,11 +21,16 @@ export default function Sidebar() {
 
   const sorted = [...conversations].sort((a, b) => b.updatedAt - a.updatedAt);
 
+  async function logout() {
+    await fetch(appPath("/api/auth/logout"), { method: "POST" }).catch(() => null);
+    window.location.assign(appPath("/login"));
+  }
+
   return (
     <aside className="flex h-full w-[252px] shrink-0 flex-col bg-sidebar border-r border-line p-3.5 dark:border-line">
       <div className="mb-4 flex items-center gap-2 px-1.5">
         <div className="h-[22px] w-[22px] shrink-0 rounded-[7px] bg-accent" />
-        <span className="flex-1 text-[14.5px] font-semibold tracking-tight">Local Chat</span>
+        <span className="flex-1 text-[14.5px] font-semibold tracking-tight">Yejun&apos;s Chat</span>
         <button
           type="button"
           onClick={toggleDarkMode}
@@ -100,6 +106,16 @@ export default function Sidebar() {
           <span className="flex-1 text-[13px] font-medium">사용자</span>
           <Settings size={14} className="text-tertiary" />
         </Link>
+        <button
+          type="button"
+          onClick={logout}
+          className="mt-1 flex w-full items-center gap-2.5 rounded-[10px] px-2 py-2 text-secondary hover:bg-chip hover:text-primary"
+        >
+          <div className="flex h-[26px] w-[26px] shrink-0 items-center justify-center">
+            <LogOut size={14} />
+          </div>
+          <span className="flex-1 text-left text-[13px] font-medium">로그아웃</span>
+        </button>
       </div>
     </aside>
   );
