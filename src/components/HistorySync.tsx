@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useChatStore } from "@/lib/store";
 import { useSettingsStore } from "@/lib/settingsStore";
+import { appPath } from "@/lib/paths";
 
 const SYNC_DEBOUNCE_MS = 1500;
 
@@ -20,7 +21,7 @@ export default function HistorySync() {
 
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
-      fetch("/api/history", {
+      fetch(appPath("/api/history"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ conversations, activeId }),

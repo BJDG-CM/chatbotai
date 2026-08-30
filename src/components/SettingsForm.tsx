@@ -81,7 +81,7 @@ export default function SettingsForm() {
     <div className="mx-auto max-w-2xl px-6 py-10">
       <h1 className="text-xl font-semibold text-primary">설정</h1>
       <p className="mt-1 text-sm text-secondary">
-        모든 설정은 서버로 전송되지 않고 브라우저의 localStorage에만 저장됩니다.
+        모든 설정은 브라우저의 localStorage에만 저장됩니다.
       </p>
 
       <SectionCard title="모델 관리">
@@ -317,9 +317,10 @@ export default function SettingsForm() {
             <div>
               <span className="text-sm text-primary">대화 기록 저장</span>
               <p className="mt-1 text-xs text-secondary">
-                localStorage와 <code className="rounded bg-chip px-1 py-0.5 font-mono">data/history.json</code>·
-                <code className="rounded bg-chip px-1 py-0.5 font-mono">data/history.md</code> 파일에 함께
-                저장됩니다. 끄면 새로고침하거나 앱을 닫을 때 대화 내용이 저장되지 않습니다(임시 대화 모드).
+                웹에서는 이 브라우저의 localStorage에 저장됩니다. 로컬 개발 환경에서는
+                <code className="ml-1 rounded bg-chip px-1 py-0.5 font-mono">data/history.json</code>과
+                <code className="rounded bg-chip px-1 py-0.5 font-mono">data/history.md</code>에도 백업됩니다.
+                끄면 새로고침하거나 앱을 닫을 때 새 대화가 저장되지 않습니다(임시 대화 모드).
               </p>
             </div>
             <Switch checked={saveHistory} onChange={setSaveHistory} label="대화 기록 저장" />

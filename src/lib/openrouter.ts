@@ -1,4 +1,5 @@
 import type { ImageAttachment } from "./types";
+import { appPath } from "./paths";
 
 export type ChatContentPart =
   | { type: "text"; text: string }
@@ -52,7 +53,7 @@ export async function streamChatCompletion(
 ): Promise<void> {
   let response: Response;
   try {
-    response = await fetch("/api/chat", {
+    response = await fetch(appPath("/api/chat"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

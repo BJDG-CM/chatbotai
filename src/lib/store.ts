@@ -5,6 +5,7 @@ import type { Conversation, ImageAttachment, Message } from "./types";
 import { getBrowserStorage, truncateTitle } from "./utils";
 import { DEFAULT_MODEL_ID } from "./defaultModels";
 import { useSettingsStore } from "./settingsStore";
+import { appPath } from "./paths";
 
 interface ChatState {
   conversations: Conversation[];
@@ -205,7 +206,7 @@ export const useChatStore = create<ChatState>()(
         }
         // Local storage came back empty (first run, or cleared) — check for a
         // local file backup before deciding there's really nothing to restore.
-        fetch("/api/history")
+        fetch(appPath("/api/history"))
           .then((res) => (res.ok ? res.json() : null))
           .then((data: { conversations?: Conversation[]; activeId?: string | null } | null) => {
             if (data?.conversations && data.conversations.length > 0) {

@@ -1,0 +1,16 @@
+{
+  "name": "chatbotai-cloudflare-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "cf-typegen": "wrangler types --env production --include-runtime false",
+    "typecheck": "tsc --noEmit",
+    "check": "wrangler deploy --dry-run --env production",
+    "deploy": "wrangler deploy --env production"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260830.1",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.127.1"
+  }
+}
