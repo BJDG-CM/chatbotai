@@ -34,9 +34,6 @@ yarn-error.log*
 .env*
 !.env.example
 
-# vercel
-.vercel
-
 # local chat history backup (personal data, not source)
 /data
 
@@ -44,5 +41,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Cloudflare Worker local state
-cloudflare-proxy/.wrangler
+# Cloudflare Worker local state and build output
+/dist/
+.vinext/
+.wrangler/
+.npm-cache/

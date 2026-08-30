@@ -10,7 +10,8 @@ const DATA_DIR = path.join(process.cwd(), "data");
 const JSON_PATH = path.join(DATA_DIR, "history.json");
 const MD_PATH = path.join(DATA_DIR, "history.md");
 const FILE_BACKUP_ENABLED =
-  process.env.ENABLE_FILE_HISTORY_BACKUP === "true" || process.env.NODE_ENV !== "production";
+  String(process.env.ENABLE_FILE_HISTORY_BACKUP) === "true" ||
+  String(process.env.NODE_ENV) !== "production";
 
 interface HistoryPayload {
   conversations: Conversation[];
