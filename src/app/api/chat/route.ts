@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     return jsonError("model과 messages가 필요합니다.", 400);
   }
 
-  const siteUrl = process.env.SITE_URL || "https://yejunlee.com/chatbot";
+  const siteUrl = process.env.SITE_URL || "https://chatbot.yejunlee.com";
   const siteName = process.env.SITE_NAME || "Yejun's Private Chat";
 
   let upstream: Response;

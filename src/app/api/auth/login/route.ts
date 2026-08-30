@@ -6,7 +6,6 @@ import {
   SESSION_MAX_AGE_SECONDS,
   validateCredentials,
 } from "@/lib/session";
-import { APP_BASE_PATH } from "@/lib/paths";
 
 interface LoginBody {
   username?: unknown;
@@ -52,7 +51,7 @@ export async function POST(request: NextRequest) {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
-    path: APP_BASE_PATH,
+    path: "/",
     maxAge: SESSION_MAX_AGE_SECONDS,
   });
   return response;

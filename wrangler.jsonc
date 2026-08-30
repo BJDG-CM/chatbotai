@@ -9,8 +9,8 @@
   "preview_urls": false,
   "routes": [
     {
-      "pattern": "yejunlee.com/chatbot*",
-      "zone_name": "yejunlee.com"
+      "pattern": "chatbot.yejunlee.com",
+      "custom_domain": true
     }
   ],
   "main": "vinext/server/fetch-handler",
@@ -24,7 +24,7 @@
   },
   "vars": {
     "NODE_ENV": "production",
-    "SITE_URL": "https://yejunlee.com/chatbot",
+    "SITE_URL": "https://chatbot.yejunlee.com",
     "SITE_NAME": "Yejun's Private Chat",
     "ENABLE_FILE_HISTORY_BACKUP": "false"
   },

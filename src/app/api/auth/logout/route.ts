@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { SESSION_COOKIE_NAME } from "@/lib/session";
-import { APP_BASE_PATH } from "@/lib/paths";
 
 export async function POST() {
   const response = NextResponse.json(
@@ -13,7 +12,7 @@ export async function POST() {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
-    path: APP_BASE_PATH,
+    path: "/",
     maxAge: 0,
   });
   return response;
