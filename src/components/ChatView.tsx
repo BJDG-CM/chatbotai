@@ -42,8 +42,13 @@ function buildApiHistory(history: Message[]): Message[] {
   return result;
 }
 
-function isRetryableStatus(status?: number): boolean {
-  return status === 429 || status === 404 || (status !== undefined && status >= 500);
+function isRetryableError(message: string, status?: number): boolean {
+  if (status === 404 || status === 408 || status === 409 || status === 429) return true;
+  if (status !== undefined && status >= 500) return true;
+
+  return /(?:upstream|overload|temporar(?:y|ily)|unavailable|timeout|timed out|rate.?limit|capacity|no endpoints?|network)/i.test(
+    message
+  );
 }
 
 // Picks the highest-benchmarked untried free model (Artificial Analysis intelligence
@@ -66,6 +71,7 @@ export default function ChatView() {
   const appendMessageImages = useChatStore((s) => s.appendMessageImages);
   const setMessageModel = useChatStore((s) => s.setMessageModel);
   const setMessageError = useChatStore((s) => s.setMessageError);
+  const resetMessageForRetry = useChatStore((s) => s.resetMessageForRetry);
   const removeMessage = useChatStore((s) => s.removeMessage);
   const setConversationModel = useChatStore((s) => s.setConversationModel);
   const maybeSetTitleFromFirstMessage = useChatStore((s) => s.maybeSetTitleFromFirstMessage);
@@ -127,7 +133,7 @@ export default function ChatView() {
           outcome = { ok: true };
         },
         onError: (message, status) => {
-          outcome = { ok: false, message, retryable: isRetryableStatus(status) };
+          outcome = { ok: false, message, retryable: isRetryableError(message, status) };
         },
       }
     );
@@ -159,6 +165,7 @@ export default function ChatView() {
       let lastMessage = "사용 가능한 무료 모델을 찾지 못했습니다.";
 
       for (let attempt = 0; attempt < MAX_AUTO_FREE_ATTEMPTS; attempt++) {
+        if (attempt > 0) resetMessageForRetry(conversationId, assistantId);
         const candidate = pickFreeCandidate(needsVision, tried);
         if (!candidate) break;
         tried.add(candidate);

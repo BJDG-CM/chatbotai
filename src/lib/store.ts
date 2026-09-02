@@ -22,6 +22,7 @@ interface ChatState {
   appendMessageImages: (conversationId: string, messageId: string, images: ImageAttachment[]) => void;
   setMessageModel: (conversationId: string, messageId: string, model: string) => void;
   setMessageError: (conversationId: string, messageId: string, error: string) => void;
+  resetMessageForRetry: (conversationId: string, messageId: string) => void;
   removeMessage: (conversationId: string, messageId: string) => void;
   setConversationModel: (conversationId: string, model: string) => void;
   maybeSetTitleFromFirstMessage: (conversationId: string, text: string) => void;
@@ -135,6 +136,24 @@ export const useChatStore = create<ChatState>()(
                   ...c,
                   messages: c.messages.map((m) =>
                     m.id === messageId ? { ...m, error } : m
+                  ),
+                }
+              : c
+          ),
+        }));
+      },
+
+      resetMessageForRetry: (conversationId, messageId) => {
+        set((state) => ({
+          conversations: state.conversations.map((c) =>
+            c.id === conversationId
+              ? {
+                  ...c,
+                  updatedAt: Date.now(),
+                  messages: c.messages.map((m) =>
+                    m.id === messageId
+                      ? { ...m, content: "", images: undefined, error: undefined }
+                      : m
                   ),
                 }
               : c

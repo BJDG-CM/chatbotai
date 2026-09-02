@@ -35,8 +35,14 @@ interface OpenRouterImagePart {
 
 interface OpenRouterStreamChunk {
   model?: string;
-  error?: { message?: string } | string;
+  error?: { message?: string; code?: number | string } | string;
   choices?: { delta?: { content?: string; images?: OpenRouterImagePart[] } }[];
+}
+
+function getErrorStatus(error: OpenRouterStreamChunk["error"]): number | undefined {
+  if (!error || typeof error === "string" || error.code === undefined) return undefined;
+  const status = typeof error.code === "number" ? error.code : Number(error.code);
+  return Number.isInteger(status) && status >= 400 && status <= 599 ? status : undefined;
 }
 
 function extractImages(parts: OpenRouterImagePart[] | undefined): ImageAttachment[] {
@@ -117,7 +123,7 @@ export async function streamChatCompletion(
                 typeof parsed.error === "string"
                   ? parsed.error
                   : parsed.error.message || "알 수 없는 오류가 발생했습니다.";
-              onError(message);
+              onError(message, getErrorStatus(parsed.error));
               return;
             }
             if (!modelReported && parsed.model) {
