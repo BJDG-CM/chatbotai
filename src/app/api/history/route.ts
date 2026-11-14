@@ -3,6 +3,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import type { Conversation } from "@/lib/types";
 import { isAuthenticated, unauthorizedResponse } from "@/lib/auth";
+import { checkMutationRequest } from "@/lib/requestGuards";
 
 export const runtime = "nodejs";
 
@@ -90,6 +91,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const rejected = checkMutationRequest(req, { json: true });
+  if (rejected) return rejected;
+
   if (!(await isAuthenticated())) return unauthorizedResponse();
 
   let body: HistoryPayload;

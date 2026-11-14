@@ -10,6 +10,7 @@ OpenRouter API를 사용하는 개인용 Next.js 채팅 앱입니다. `chatbot.y
 - 세션 쿠키는 `chatbot.yejunlee.com` 호스트에서만 전송됩니다.
 - 전체 앱에 `noindex`, `nofollow`, `noarchive` 헤더와 메타데이터를 적용합니다.
 - OpenRouter API 키는 서버에만 존재합니다.
+- 상태를 바꾸는 API(POST)는 같은 출처(`Origin`)의 요청만 받고, 로그아웃을 뺀 나머지는 `Content-Type: application/json`만 받습니다.
 
 ## 로컬 실행
 

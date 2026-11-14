@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import type { ChatMessagePayload } from "@/lib/openrouter";
 import { isAuthenticated, unauthorizedResponse } from "@/lib/auth";
+import { checkMutationRequest } from "@/lib/requestGuards";
 
 export const runtime = "nodejs";
 
@@ -22,6 +23,9 @@ function jsonError(message: string, status: number) {
 }
 
 export async function POST(req: NextRequest) {
+  const rejected = checkMutationRequest(req, { json: true });
+  if (rejected) return rejected;
+
   if (!(await isAuthenticated())) return unauthorizedResponse();
 
   const apiKey = process.env.OPENROUTER_API_KEY;

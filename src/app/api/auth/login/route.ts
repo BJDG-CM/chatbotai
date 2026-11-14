@@ -6,6 +6,7 @@ import {
   SESSION_MAX_AGE_SECONDS,
   validateCredentials,
 } from "@/lib/session";
+import { checkMutationRequest } from "@/lib/requestGuards";
 
 interface LoginBody {
   username?: unknown;
@@ -13,6 +14,9 @@ interface LoginBody {
 }
 
 export async function POST(request: NextRequest) {
+  const rejected = checkMutationRequest(request, { json: true });
+  if (rejected) return rejected;
+
   const missing = getMissingAuthEnv();
   if (missing.length > 0) {
     console.error("Missing authentication environment variables:", missing.join(", "));
