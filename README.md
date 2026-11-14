@@ -10,7 +10,8 @@ OpenRouter API를 사용하는 개인용 Next.js 채팅 앱입니다. `chatbot.y
 - 세션 쿠키는 `chatbot.yejunlee.com` 호스트에서만 전송됩니다.
 - 전체 앱에 `noindex`, `nofollow`, `noarchive` 헤더와 메타데이터를 적용합니다.
 - OpenRouter API 키는 서버에만 존재합니다.
-- 로그인은 IP당 15분에 5회 실패하면 15분 동안, 전체로 60분에 20회 실패하면 60분 동안 막습니다(`LoginGuard` Durable Object). 가드를 쓸 수 없으면 로그인하지 않고 503을 반환하며, 이미 발급된 세션 쿠키에는 영향이 없습니다. 전체 정지는 풀린 뒤 제3자가 실패 요청 20회로 다시 걸 수 있으므로 반복 공격이 계속되면 새 로그인이 계속 막힐 수 있습니다(기존 세션은 만료 전까지 그대로 유효).
+- 로그인은 IP당 15분에 5회 실패하면 15분 동안, 전체로 60분에 20회 실패하면 60분 동안 막습니다(`LoginGuard` Durable Object). 가드를 쓸 수 없으면 로그인하지 않고 503을 반환하며, 이미 발급된 세션 쿠키에는 영향이 없습니다. 전체 정지는 풀린 뒤 제3자가 실패 요청 20회로 다시 걸 수 있으므로, 반복 공격이 계속되면 신뢰 기기 쿠키가 없는 기기에서는 새 로그인이 계속 막힐 수 있습니다(기존 세션은 만료 전까지 그대로 유효).
+- 로그인에 성공하면 세션 쿠키와 함께 90일 동안 유효한 신뢰 기기 쿠키(`HttpOnly`, `SameSite=Strict`, 운영에서 `Secure`, 경로 `/api/auth/login`)도 발급하며, 로그인할 때마다 새로 발급합니다. 이 쿠키가 유효한 로그인 시도는 전체 정지만 건너뛰고 IP 제한은 그대로 받습니다. 신뢰 기기 쿠키로 실패한 시도는 전체 카운터 대신 따로 세어, 60분에 20회 실패하면 60분 동안 이 예외를 멈춥니다. 로그아웃해도 지워지지 않으며, 모든 기기의 신뢰를 해제하려면 `CHATBOT_SESSION_SECRET`을 바꿉니다(기존 세션도 함께 끊깁니다).
 - `/api/chat`은 본문 24 MiB, 메시지 200개, 내가 올리는 이미지는 메시지당 3장(장당 4 MiB)까지만 받고, 허용된 모델만 호출합니다. `max_tokens`는 기본 4096, 최대 `CHAT_MAX_OUTPUT_TOKENS`(기본 16384)입니다. 목록에 없는 모델은 쉼표로 구분한 `CHAT_EXTRA_MODEL_IDS`에 넣어야 쓸 수 있습니다. 두 값은 `wrangler.jsonc`의 `vars`에서 수정하며(배포 때 반영), 로컬에서는 `.env.local`로 덮어쓸 수 있습니다.
 - 상태를 바꾸는 API(POST)는 같은 출처(`Origin`)의 요청만 받고, 로그아웃을 뺀 나머지는 `Content-Type: application/json`만 받습니다.
 
@@ -108,7 +109,8 @@ npm run cloudflare:deploy
 - `src/app/api/auth/`: 로그인·로그아웃 API
 - `src/app/api/chat/`: 인증된 OpenRouter 스트리밍 프록시
 - `src/app/api/history/`: 인증된 대화 기록 동기화
-- `src/lib/session.ts`: 자격 확인과 서명 세션 처리
+- `src/lib/session.ts`: 자격 확인과 서명 세션·신뢰 기기 토큰 처리
+- `src/lib/loginHandler.ts`: 로그인 처리(신뢰 기기 확인, 쿠키 발급). 로그인 라우트는 `LoginGuard` 연결만 담당
 - `worker/`: 커스텀 Worker 엔트리(`index.ts`)와 로그인 시도를 세는 `LoginGuard` Durable Object(SQLite)
 - `vite.config.ts`: Next.js 앱을 Workers용으로 변환하는 vinext 설정
 - `wrangler.jsonc`: `chatbot.yejunlee.com` Custom Domain, Secret 요구 사항, `LoginGuard` Durable Object 바인딩과 migration, Workers 런타임 설정
