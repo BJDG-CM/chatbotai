@@ -2,6 +2,10 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 export const SESSION_COOKIE_NAME = "chatbotai_session";
 export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
+export const TRUSTED_DEVICE_COOKIE_NAME = "chatbotai_trusted_device";
+export const TRUSTED_DEVICE_MAX_AGE_SECONDS = 60 * 60 * 24 * 90;
+// 서명 대상 앞에 용도를 붙여, 같은 비밀값으로 서명한 세션 토큰과 서로 바꿔 쓸 수 없게 한다.
+const TRUSTED_DEVICE_PURPOSE = "trusted-device";
 
 interface SessionPayload {
   sub: string;
@@ -31,8 +35,10 @@ function safeEqual(left: string, right: string): boolean {
   return timingSafeEqual(digest(left), digest(right));
 }
 
-function signature(payload: string, secret: string): string {
-  return createHmac("sha256", secret).update(payload).digest("base64url");
+function signature(payload: string, secret: string, purpose?: string): string {
+  return createHmac("sha256", secret)
+    .update(purpose ? `${purpose}.${payload}` : payload)
+    .digest("base64url");
 }
 
 export function validateCredentials(username: string, password: string): boolean {
@@ -42,7 +48,7 @@ export function validateCredentials(username: string, password: string): boolean
   return safeEqual(username, expectedUsername) && safeEqual(password, expectedPassword);
 }
 
-export function createSessionToken(username: string, now = Date.now()): string {
+function issueToken(username: string, now: number, maxAgeSeconds: number, purpose?: string): string {
   const secret = getRequiredEnv("CHATBOT_SESSION_SECRET");
   if (!hasStrongSessionSecret()) {
     throw new Error("CHATBOT_SESSION_SECRET must contain at least 32 bytes");
@@ -52,13 +58,29 @@ export function createSessionToken(username: string, now = Date.now()): string {
   const payload: SessionPayload = {
     sub: username,
     iat: issuedAt,
-    exp: issuedAt + SESSION_MAX_AGE_SECONDS,
+    exp: issuedAt + maxAgeSeconds,
   };
   const encoded = Buffer.from(JSON.stringify(payload)).toString("base64url");
-  return `${encoded}.${signature(encoded, secret)}`;
+  return `${encoded}.${signature(encoded, secret, purpose)}`;
+}
+
+export function createSessionToken(username: string, now = Date.now()): string {
+  return issueToken(username, now, SESSION_MAX_AGE_SECONDS);
 }
 
 export function verifySessionToken(token: string | undefined, now = Date.now()): boolean {
+  return verifyToken(token, now);
+}
+
+export function createTrustedDeviceToken(username: string, now = Date.now()): string {
+  return issueToken(username, now, TRUSTED_DEVICE_MAX_AGE_SECONDS, TRUSTED_DEVICE_PURPOSE);
+}
+
+export function verifyTrustedDeviceToken(token: string | undefined, now = Date.now()): boolean {
+  return verifyToken(token, now, TRUSTED_DEVICE_PURPOSE);
+}
+
+function verifyToken(token: string | undefined, now: number, purpose?: string): boolean {
   if (!token) return false;
   const secret = getRequiredEnv("CHATBOT_SESSION_SECRET");
   const expectedUsername = getRequiredEnv("CHATBOT_USERNAME");
@@ -66,7 +88,7 @@ export function verifySessionToken(token: string | undefined, now = Date.now()):
 
   const [encoded, providedSignature, extra] = token.split(".");
   if (!encoded || !providedSignature || extra) return false;
-  const expectedSignature = signature(encoded, secret);
+  const expectedSignature = signature(encoded, secret, purpose);
   if (!safeEqual(providedSignature, expectedSignature)) return false;
 
   try {
