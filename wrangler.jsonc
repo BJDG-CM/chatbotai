@@ -13,12 +13,16 @@
       "custom_domain": true
     }
   ],
-  "main": "vinext/server/fetch-handler",
+  "main": "./worker/index.ts",
   "assets": {
     "directory": "dist/client",
     "not_found_handling": "none",
     "binding": "ASSETS"
   },
+  "durable_objects": {
+    "bindings": [{ "name": "LOGIN_GUARD", "class_name": "LoginGuard" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["LoginGuard"] }],
   "cache": {
     "enabled": true
   },

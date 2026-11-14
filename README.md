@@ -39,9 +39,11 @@ ENABLE_FILE_HISTORY_BACKUP=true
 node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 ```
 
-로컬 주소는 `http://localhost:3000`입니다.
+`npm run dev`는 `vinext dev`로 앱을 실행합니다. 운영과 같은 Workers 런타임이라 로컬에서도 로그인 보호용 Durable Object(`LoginGuard`)가 동작합니다. 로컬 주소는 `http://localhost:3000`입니다.
 
 ## 검증
+
+`npm run build`는 `vinext build`입니다.
 
 ```bash
 npm test
@@ -102,5 +104,6 @@ npm run cloudflare:deploy
 - `src/app/api/chat/`: 인증된 OpenRouter 스트리밍 프록시
 - `src/app/api/history/`: 인증된 대화 기록 동기화
 - `src/lib/session.ts`: 자격 확인과 서명 세션 처리
+- `worker/`: 커스텀 Worker 엔트리(`index.ts`)와 로그인 시도를 세는 `LoginGuard` Durable Object(SQLite)
 - `vite.config.ts`: Next.js 앱을 Workers용으로 변환하는 vinext 설정
-- `wrangler.jsonc`: `chatbot.yejunlee.com` Custom Domain, Secret 요구 사항, Workers 런타임 설정
+- `wrangler.jsonc`: `chatbot.yejunlee.com` Custom Domain, Secret 요구 사항, `LoginGuard` Durable Object 바인딩과 migration, Workers 런타임 설정
