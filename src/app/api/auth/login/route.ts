@@ -1,3 +1,4 @@
+import { env } from "cloudflare:workers";
 import { NextRequest, NextResponse } from "next/server";
 import {
   createSessionToken,
@@ -8,6 +9,12 @@ import {
 } from "@/lib/session";
 import { checkMutationRequest } from "@/lib/requestGuards";
 import { readJsonBody } from "@/lib/readBody";
+import {
+  clientIp,
+  loginGuardResponse,
+  loginGuardUnavailableResponse,
+} from "@/lib/loginGuardHttp";
+import type { GuardOutcome } from "@/lib/loginGuardPolicy";
 
 const LOGIN_MAX_BODY_BYTES = 4096;
 
@@ -40,12 +47,18 @@ export async function POST(request: NextRequest) {
 
   const username = typeof body.username === "string" ? body.username : "";
   const password = typeof body.password === "string" ? body.password : "";
-  if (username.length > 128 || password.length > 256 || !validateCredentials(username, password)) {
-    return NextResponse.json(
-      { error: "사용자명 또는 비밀번호가 올바르지 않습니다." },
-      { status: 401, headers: { "Cache-Control": "no-store" } }
-    );
+  const valid = username.length <= 128 && password.length <= 256 && validateCredentials(username, password);
+
+  // 확인과 기록은 LoginGuard 호출 한 번 안에서 원자적으로 일어난다. 실패하면 닫힌 채로 둔다.
+  let outcome: GuardOutcome;
+  try {
+    const guard = env.LOGIN_GUARD;
+    outcome = await guard.get(guard.idFromName("login")).attempt(clientIp(request), valid);
+  } catch {
+    return loginGuardUnavailableResponse();
   }
+  const guarded = loginGuardResponse(outcome);
+  if (guarded) return guarded;
 
   const response = NextResponse.json(
     { ok: true },
