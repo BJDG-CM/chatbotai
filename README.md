@@ -44,6 +44,8 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 
 `npm run dev`는 `vinext dev`로 앱을 실행합니다. 운영과 같은 Workers 런타임이라 로컬에서도 로그인 보호용 Durable Object(`LoginGuard`)가 동작합니다. 로컬 주소는 `http://localhost:3000`입니다.
 
+로컬에서는 `cf-connecting-ip`가 없어 모든 요청이 하나의 IP로 계산되고, Durable Object 상태는 `.wrangler/state`에 남습니다. 로컬에서 로그인이 잠겼다면 `.wrangler/state`를 지우고 서버를 다시 시작하세요. `data/` 파일 백업은 Node 런타임에서만 동작하며 `vinext dev`에서는 동작하지 않습니다.
+
 ## 검증
 
 `npm run build`는 `vinext build`입니다.
