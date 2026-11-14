@@ -11,6 +11,7 @@ OpenRouter API를 사용하는 개인용 Next.js 채팅 앱입니다. `chatbot.y
 - 전체 앱에 `noindex`, `nofollow`, `noarchive` 헤더와 메타데이터를 적용합니다.
 - OpenRouter API 키는 서버에만 존재합니다.
 - 로그인은 IP당 15분에 5회 실패하면 15분 동안, 전체로 60분에 20회 실패하면 60분 동안 막습니다(`LoginGuard` Durable Object). 가드를 쓸 수 없으면 로그인하지 않고 503을 반환하며, 이미 발급된 세션 쿠키에는 영향이 없습니다.
+- `/api/chat`은 본문 24 MiB, 메시지 200개, 메시지당 이미지 3장(장당 4 MiB)까지만 받고, 허용된 모델만 호출합니다. `max_tokens`는 기본 4096, 최대 `CHAT_MAX_OUTPUT_TOKENS`(기본 16384)입니다. 목록에 없는 모델은 쉼표로 구분한 `CHAT_EXTRA_MODEL_IDS`에 넣어야 쓸 수 있습니다(두 값 모두 환경변수로만 설정하고 `vars`에는 넣지 않습니다).
 - 상태를 바꾸는 API(POST)는 같은 출처(`Origin`)의 요청만 받고, 로그아웃을 뺀 나머지는 `Content-Type: application/json`만 받습니다.
 
 ## 로컬 실행

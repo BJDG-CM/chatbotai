@@ -7,9 +7,9 @@ import type { CatalogModel, ModelOption } from "./types";
 // (gpt-oss-family reasoning models were tried first but sometimes loop
 // indecisively between near-tied free candidates and never emit an answer.)
 export const AUTO_ROUTER_MODEL_ID = "nvidia/nemotron-nano-9b-v2:free";
-// No max_tokens cap here on purpose: many free/small models reason via hidden
-// chain-of-thought before answering, and an arbitrary cap can cut that off before
-// the actual model id ever appears — better to let it finish than guess a budget.
+// Generous enough that hidden chain-of-thought is not cut off before the model id
+// appears, but still bounded so a looping router model cannot generate forever.
+export const AUTO_ROUTER_MAX_TOKENS = 2048;
 
 function catalogInfo(id: string): CatalogModel | undefined {
   return MODEL_CATALOG.find((m) => m.id === id);
@@ -96,6 +96,7 @@ export async function chooseModelForRequest(
         model: AUTO_ROUTER_MODEL_ID,
         messages: [{ role: "user", content: prompt }],
         temperature: 0,
+        maxTokens: AUTO_ROUTER_MAX_TOKENS,
         signal,
       },
       {

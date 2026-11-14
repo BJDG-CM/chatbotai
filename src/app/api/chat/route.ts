@@ -1,19 +1,10 @@
 import { NextRequest } from "next/server";
-import type { ChatMessagePayload } from "@/lib/openrouter";
+import { MAX_CHAT_REQUEST_BYTES, parseChatRequest } from "@/lib/chatRequest";
+import { readJsonBody } from "@/lib/readBody";
 import { isAuthenticated, unauthorizedResponse } from "@/lib/auth";
 import { checkMutationRequest } from "@/lib/requestGuards";
 
 export const runtime = "nodejs";
-
-const MAX_REQUEST_BYTES = 24 * 1024 * 1024; // headroom above 3 * 4MB images (base64 inflates ~1.37x)
-
-interface ChatRequestBody {
-  model?: string;
-  messages?: ChatMessagePayload[];
-  temperature?: number;
-  maxTokens?: number;
-  topP?: number;
-}
 
 function jsonError(message: string, status: number) {
   return new Response(JSON.stringify({ error: message }), {
@@ -36,22 +27,18 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const contentLength = Number(req.headers.get("content-length") ?? 0);
-  if (contentLength > MAX_REQUEST_BYTES) {
-    return jsonError("요청 크기가 너무 큽니다. 첨부 이미지 용량을 줄여주세요.", 413);
+  const read = await readJsonBody(req, MAX_CHAT_REQUEST_BYTES);
+  if (!read.ok) {
+    return read.status === 413
+      ? jsonError("요청 크기가 너무 큽니다. 첨부 이미지 용량을 줄여주세요.", 413)
+      : jsonError("잘못된 요청 본문입니다.", 400);
   }
 
-  let body: ChatRequestBody;
-  try {
-    body = await req.json();
-  } catch {
-    return jsonError("잘못된 요청 본문입니다.", 400);
-  }
-
-  const { model, messages, temperature, maxTokens, topP } = body;
-  if (!model || !Array.isArray(messages) || messages.length === 0) {
-    return jsonError("model과 messages가 필요합니다.", 400);
-  }
+  const result = parseChatRequest(read.value, {
+    capEnv: process.env.CHAT_MAX_OUTPUT_TOKENS,
+    extraModelsEnv: process.env.CHAT_EXTRA_MODEL_IDS,
+  });
+  if (!result.ok) return jsonError(result.error, 400);
 
   const siteUrl = process.env.SITE_URL || "https://chatbot.yejunlee.com";
   const siteName = process.env.SITE_NAME || "Yejun's Private Chat";
@@ -66,14 +53,7 @@ export async function POST(req: NextRequest) {
         "HTTP-Referer": siteUrl,
         "X-Title": siteName,
       },
-      body: JSON.stringify({
-        model,
-        messages,
-        temperature: typeof temperature === "number" ? temperature : 0.7,
-        ...(typeof maxTokens === "number" && maxTokens > 0 ? { max_tokens: maxTokens } : {}),
-        ...(typeof topP === "number" ? { top_p: topP } : {}),
-        stream: true,
-      }),
+      body: JSON.stringify(result.upstream),
       signal: req.signal,
     });
   } catch {
