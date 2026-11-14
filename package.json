@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "test": "tsx --test src/lib/*.test.ts",
     "cloudflare:dev": "vinext dev --port 3001",
     "cloudflare:build": "vinext build",
     "cloudflare:preview": "wrangler dev --config dist/server/wrangler.json",
@@ -40,6 +41,7 @@
     "eslint": "^9",
     "eslint-config-next": "^16.3.3",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vite": "^8.2.2",
     "wrangler": "^4.127.1"

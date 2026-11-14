@@ -44,6 +44,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 ## 검증
 
 ```bash
+npm test
 npm run lint
 npm run build
 npm run cloudflare:build
