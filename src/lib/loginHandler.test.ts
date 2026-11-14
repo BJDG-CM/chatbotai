@@ -109,6 +109,21 @@ test("전역 정지 중에는 유효한 신뢰 쿠키만 통과", async () => {
   assert.deepEqual(guard.calls.map((call) => call.trustedDevice), [true]);
 });
 
+test("신뢰 쿠키로 로그인해도 90일 신뢰 쿠키를 새로 발급", async () => {
+  const guard = memoryGuard();
+  const res = await handleLogin(
+    loginRequest("test-password", { trustedCookie: createTrustedDeviceToken("owner", Date.now() - 80 * DAY) }),
+    guard.attempt,
+  );
+  assert.equal(res.status, 200);
+  assert.deepEqual(guard.calls.map((call) => call.trustedDevice), [true]);
+  const reissued = setCookies(res).get("chatbotai_trusted_device");
+  assert.ok(reissued);
+  assert.ok(reissued.attributes.includes("max-age=7776000"));
+  // 80일 전에 받은 쿠키는 10일 뒤 만료된다. 새로 발급한 쿠키는 89일 뒤에도 유효해야 한다.
+  assert.equal(verifyTrustedDeviceToken(reissued.value, Date.now() + 89 * DAY), true);
+});
+
 test("틀린 비밀번호는 신뢰 쿠키가 있어도 401이고 쿠키를 주지 않음", async () => {
   const guard = memoryGuard({ global: blockedFor(60 * 60_000) });
   const res = await handleLogin(
