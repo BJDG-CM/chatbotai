@@ -54,3 +54,12 @@ test("멀티바이트: 바이트로 세고 청크 경계에서 잘린 한글을 
     value: { u: "가" },
   });
 });
+
+test("읽는 도중 스트림 오류 → 400", async () => {
+  const body = new ReadableStream<Uint8Array>({
+    pull(c) {
+      c.error(new Error("boom"));
+    },
+  });
+  assert.deepEqual(await readJsonBody({ headers: new Headers(), body }, 4096), { ok: false, status: 400 });
+});

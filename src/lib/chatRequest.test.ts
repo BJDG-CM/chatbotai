@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseChatRequest, resolveMaxTokens } from "./chatRequest";
+import { allowedModelIds, parseChatRequest, resolveMaxTokens } from "./chatRequest";
 
 const MiB = 1024 * 1024,
   user = (content: unknown) => ({ role: "user", content });
@@ -73,4 +73,38 @@ test("실제 클라이언트 페이로드 허용", () => {
     messages: [{ role: "system", content: "be brief" }, user([img(1)]), { role: "assistant", content: "" }, user("again")],
   });
   assert.equal(r.ok, true);
+});
+
+test("생성 이미지: assistant 메시지는 개수·크기 상한 없이 data/https URL 허용", () => {
+  const assistant = (content: unknown) => ({ role: "assistant", content });
+  const https = { type: "image_url", image_url: { url: "https://example.com/generated.png" } };
+  assert.equal(parse({ messages: [user("draw"), assistant([img(1), img(1), img(1), img(1)])] }).ok, true);
+  assert.equal(parse({ messages: [user("draw"), assistant([img(5 * MiB)])] }).ok, true);
+  assert.equal(parse({ messages: [user("draw"), assistant([https])] }).ok, true);
+  assert.match(error({ messages: [user([https])] }), /잘못된 메시지 형식/);
+  assert.match(error({ messages: [user([img(1), img(1), img(1), img(1)])] }), /최대 3개/);
+  assert.match(
+    error({ messages: [assistant([{ type: "image_url", image_url: { url: "http://example.com/a.png" } }])] }),
+    /잘못된 메시지 형식/,
+  );
+});
+
+test("업스트림에 허용되지 않은 최상위·파트 필드는 전달되지 않음", () => {
+  const part = { type: "image_url", image_url: { url: img(1).image_url.url, detail: "high" } };
+  const r = parse({
+    messages: [user([part])],
+    provider: { order: ["x"] },
+    plugins: [{ id: "web" }],
+    transforms: ["middle-out"],
+    max_tokens: 999999,
+  });
+  assert.ok(r.ok);
+  assert.deepEqual(Object.keys(r.upstream).sort(), ["max_tokens", "messages", "model", "stream", "temperature"]);
+  assert.equal(r.upstream.max_tokens, 4096);
+  assert.deepEqual(r.upstream.messages, [user([{ type: "image_url", image_url: { url: img(1).image_url.url } }])]);
+});
+
+test("CHAT_EXTRA_MODEL_IDS가 비어 있으면 허용 목록에 아무것도 더하지 않음", () => {
+  assert.equal(allowedModelIds("").size, allowedModelIds(undefined).size);
+  assert.equal(allowedModelIds(" , ,").has(""), false);
 });

@@ -17,15 +17,19 @@ export async function readJsonBody(
   const reader = request.body.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    total += value.byteLength;
-    if (total > maxBytes) {
-      await reader.cancel().catch(() => undefined);
-      return { ok: false, status: 413 };
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > maxBytes) {
+        await reader.cancel().catch(() => undefined);
+        return { ok: false, status: 413 };
+      }
+      chunks.push(value);
     }
-    chunks.push(value);
+  } catch {
+    return { ok: false, status: 400 };
   }
 
   // 청크 경계에서 UTF-8이 잘릴 수 있으므로 합친 뒤 한 번에 디코드한다.
@@ -35,6 +39,7 @@ export async function readJsonBody(
     merged.set(chunk, offset);
     offset += chunk.byteLength;
   }
+  chunks.length = 0; // 상한 근처에서 최대 메모리를 낮추기 위해 디코드 전에 해제
   try {
     return { ok: true, value: JSON.parse(new TextDecoder().decode(merged)) };
   } catch {

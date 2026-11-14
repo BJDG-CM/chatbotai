@@ -10,6 +10,7 @@ export const DEFAULT_MAX_TOKENS = 4096;
 export const DEFAULT_OUTPUT_TOKEN_CAP = 16384;
 
 const IMAGE_DATA_URL = /^data:image\/[\w.+-]+;base64,/;
+const IMAGE_HTTPS_URL = /^https:\/\//;
 const ROLES = new Set(["system", "user", "assistant"]);
 const BAD_MESSAGE = "잘못된 메시지 형식입니다.";
 
@@ -59,12 +60,14 @@ function decodedBase64Bytes(dataUrl: string): number {
   return Math.floor((b64.length * 3) / 4) - padding;
 }
 
-function parsePart(part: unknown): ChatContentPart | null {
+function parsePart(part: unknown, allowHttps: boolean): ChatContentPart | null {
   if (!isRecord(part)) return null;
   if (part.type === "text" && typeof part.text === "string") return { type: "text", text: part.text };
   if (part.type === "image_url" && isRecord(part.image_url)) {
     const url = part.image_url.url;
-    if (typeof url === "string" && IMAGE_DATA_URL.test(url)) return { type: "image_url", image_url: { url } };
+    if (typeof url === "string" && (IMAGE_DATA_URL.test(url) || (allowHttps && IMAGE_HTTPS_URL.test(url)))) {
+      return { type: "image_url", image_url: { url } };
+    }
   }
   return null;
 }
@@ -82,10 +85,14 @@ function parseMessage(raw: unknown): MessageResult {
 
   const parts: ChatContentPart[] = [];
   for (const rawPart of raw.content) {
-    const part = parsePart(rawPart);
+    const part = parsePart(rawPart, raw.role !== "user");
     if (!part) return { ok: false, error: BAD_MESSAGE };
     parts.push(part);
   }
+  // 개수·크기 상한은 사용자가 올린 이미지에만 적용한다. 모델이 생성해 assistant
+  // 메시지에 저장된 이미지는 매 요청에 되돌려 보내므로 막으면 대화가 영영 깨진다.
+  // 전체 상한은 본문 24 MiB가 맡는다.
+  if (raw.role !== "user") return { ok: true, message: { role: raw.role, content: parts } };
   const images = parts.filter((p) => p.type === "image_url");
   if (images.length > MAX_IMAGES_PER_MESSAGE) {
     return { ok: false, error: `이미지는 메시지당 최대 ${MAX_IMAGES_PER_MESSAGE}개까지 보낼 수 있습니다.` };

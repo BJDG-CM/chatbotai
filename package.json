@@ -5,7 +5,6 @@
   "scripts": {
     "dev": "vinext dev",
     "build": "vinext build",
-    "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test src/lib/*.test.ts",

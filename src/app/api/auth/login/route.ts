@@ -54,7 +54,11 @@ export async function POST(request: NextRequest) {
   try {
     const guard = env.LOGIN_GUARD;
     outcome = await guard.get(guard.idFromName("login")).attempt(clientIp(request), valid);
-  } catch {
+  } catch (error) {
+    console.error(
+      "LoginGuard unavailable:",
+      error instanceof Error ? `${error.name}: ${error.message}` : "unknown"
+    );
     return loginGuardUnavailableResponse();
   }
   const guarded = loginGuardResponse(outcome);
