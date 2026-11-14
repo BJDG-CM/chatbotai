@@ -14,6 +14,7 @@ interface CounterRow {
 
 const IP_PREFIX = "ip:";
 const GLOBAL_KEY = "global";
+const TRUSTED_KEY = "trusted";
 
 /**
  * 로그인 시도를 세는 단일 Durable Object(이름 "login").
@@ -28,16 +29,19 @@ export class LoginGuard extends DurableObject<Cloudflare.Env> {
     );
   }
 
-  async attempt(ip: string, credentialsValid: boolean): Promise<GuardOutcome> {
+  /** trustedDevice는 라우트가 서명을 확인한 신뢰 기기 쿠키 여부. 인자가 없는 이전 호출은 비신뢰로 본다. */
+  async attempt(ip: string, credentialsValid: boolean, trustedDevice = false): Promise<GuardOutcome> {
     const now = Date.now();
     const ipKey = `${IP_PREFIX}${ip}`;
     const { outcome, next } = applyLoginAttempt(
-      { ip: this.read(ipKey), global: this.read(GLOBAL_KEY) },
+      { ip: this.read(ipKey), global: this.read(GLOBAL_KEY), trusted: this.read(TRUSTED_KEY) },
       credentialsValid,
       now,
+      trustedDevice,
     );
     this.write(ipKey, next.ip, LOGIN_GUARD_LIMITS.ipWindowMs);
     this.write(GLOBAL_KEY, next.global, LOGIN_GUARD_LIMITS.globalWindowMs);
+    this.write(TRUSTED_KEY, next.trusted, LOGIN_GUARD_LIMITS.trustedWindowMs);
 
     if ((await this.ctx.storage.getAlarm()) === null) {
       await this.ctx.storage.setAlarm(now + LOGIN_GUARD_LIMITS.purgeIntervalMs);
