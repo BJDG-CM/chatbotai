@@ -4,15 +4,18 @@ import path from "path";
 import type { Conversation } from "@/lib/types";
 import { isAuthenticated, unauthorizedResponse } from "@/lib/auth";
 import { checkMutationRequest } from "@/lib/requestGuards";
+import { shouldBackupHistoryToFile } from "@/lib/historyBackup";
 
 export const runtime = "nodejs";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const JSON_PATH = path.join(DATA_DIR, "history.json");
 const MD_PATH = path.join(DATA_DIR, "history.md");
-const FILE_BACKUP_ENABLED =
-  String(process.env.ENABLE_FILE_HISTORY_BACKUP) === "true" ||
-  String(process.env.NODE_ENV) !== "production";
+const FILE_BACKUP_ENABLED = shouldBackupHistoryToFile({
+  flag: process.env.ENABLE_FILE_HISTORY_BACKUP,
+  nodeEnv: process.env.NODE_ENV,
+  userAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined,
+});
 
 interface HistoryPayload {
   conversations: Conversation[];
