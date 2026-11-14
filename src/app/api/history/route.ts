@@ -25,7 +25,7 @@ interface HistoryPayload {
 function jsonError(message: string, status: number) {
   return new Response(JSON.stringify({ error: message }), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
   });
 }
 
